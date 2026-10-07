@@ -50,12 +50,68 @@
         <p class="text-xs text-gray-400">Total Pesanan</p>
         <p id="total-price" class="text-xl font-extrabold text-orange-400">Rp 0</p>
       </div>
-      <button onclick="sendOrder()" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition">
+      <button id="btn-submit" onclick="sendOrder()" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition">
         <i class="fa-brands fa-whatsapp text-lg"></i>
-        <span>Kirim Pesanan</span>
+        <span id="btn-text">Kirim Pesanan</span>
       </button>
     </div>
   </div>
+
+  <!-- Firebase App & Firestore SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Konfigurasi Firebase Publik
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-PlaceholderKeyForRiketApp500",
+      authDomain: "riket-app.firebaseapp.com",
+      projectId: "riket-app",
+      storageBucket: "riket-app.appspot.com",
+      messagingSenderId: "102938475610",
+      appId: "1:102938475610:web:abc123def4567890"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Dapatkan Nomor Pesanan berikutnya secara aman (Anti-Bentrok 1-500)
+    async function getNextOrderNumber() {
+      const counterRef = doc(db, "counters", "order_counter");
+      
+      try {
+        const nextOrderNum = await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          let currentNum = 0;
+          
+          if (counterDoc.exists()) {
+            currentNum = counterDoc.data().last_number || 0;
+          }
+          
+          // Increment & Auto Reset di angka 500
+          let newNum = currentNum + 1;
+          if (newNum > 500) {
+            newNum = 1;
+          }
+          
+          transaction.set(counterRef, { last_number: newNum }, { merge: true });
+          return newNum;
+        });
+
+        return nextOrderNum;
+      } catch (error) {
+        console.warn("Gagal terhubung ke counter server, menggunakan generator lokal:", error);
+        // Fallback jika koneksi server bermasalah
+        let localNum = parseInt(localStorage.getItem("riket_local_order") || "0") + 1;
+        if (localNum > 500) localNum = 1;
+        localStorage.setItem("riket_local_order", localNum);
+        return localNum;
+      }
+    }
+
+    // Bind function ke window agar bisa dipanggil onclick
+    window.getNextOrderNumber = getNextOrderNumber;
+  </script>
 
   <script>
     // Nomor WhatsApp usaha kamu
@@ -134,7 +190,6 @@
     function selectOption(itemId, val) {
       options[itemId] = val;
       
-      // Update UI tombol opsi
       const optionsList = ['Less Sugar', 'Normal Sugar', 'Extra Sugar'];
       optionsList.forEach(opt => {
         const btn = document.getElementById(`opt-${itemId}-${opt}`);
@@ -158,7 +213,6 @@
 
       document.getElementById(`qty-${id}`).innerText = cart[id] || 0;
 
-      // Sembunyikan / tampilkan opsi gula tergantung jumlah pesanan
       const optContainer = document.getElementById(`options-container-${id}`);
       if (optContainer) {
         if (cart[id] > 0) {
@@ -182,7 +236,7 @@
       document.getElementById('total-price').innerText = `Rp ${total.toLocaleString('id-ID')}`;
     }
 
-    function sendOrder() {
+    async function sendOrder() {
       const customerName = document.getElementById('customer-name').value.trim();
       
       if (!customerName) {
@@ -196,31 +250,58 @@
         return;
       }
 
-      let message = `* [ PESANAN BARU - RIKET ] *\n`;
-      message += `-----------------------------------\n`;
-      message += `-> *Nama Pemesan:* ${customerName}\n`;
-      message += `-----------------------------------\n\n`;
-      message += `*DETAIL PESANAN:*\n`;
+      const btnSubmit = document.getElementById('btn-submit');
+      const btnText = document.getElementById('btn-text');
+      
+      // Loading state untuk mencegah double click
+      btnSubmit.disabled = true;
+      btnText.innerText = "Memproses...";
 
-      let total = 0;
-      selectedItems.forEach(id => {
-        const item = menuItems.find(m => m.id == id);
-        const subtotal = item.price * cart[id];
-        total += subtotal;
-        
-        let itemDetail = `• *${item.name}* (x${cart[id]}) = Rp ${subtotal.toLocaleString('id-ID')}`;
-        if (item.hasOptions && options[id]) {
-          itemDetail += `\n  └ *Opsi Gula:* ${options[id]}`;
+      try {
+        // Dapatkan nomor pesanan berurutan (1 - 500)
+        let orderNum = 1;
+        if (typeof window.getNextOrderNumber === 'function') {
+          orderNum = await window.getNextOrderNumber();
+        } else {
+          orderNum = Math.floor(Math.random() * 500) + 1;
         }
-        message += itemDetail + `\n`;
-      });
 
-      message += `\n-----------------------------------\n`;
-      message += `-> *TOTAL BAYAR:* *Rp ${total.toLocaleString('id-ID')}*\n\n`;
-      message += `Mohon segera diproses ya kak! Terima kasih.`;
+        const paddedOrderNum = String(orderNum).padStart(3, '0');
 
-      const encodedMessage = encodeURIComponent(message);
-      window.open(`https://wa.me/${ADMIN_WA}?text=${encodedMessage}`, '_blank');
+        let message = `* [ PESANAN BARU - RIKET ] *\n`;
+        message += `-----------------------------------\n`;
+        message += `-> *No. Pesanan:* #${paddedOrderNum}\n`;
+        message += `-> *Nama Pemesan:* ${customerName}\n`;
+        message += `-----------------------------------\n\n`;
+        message += `*DETAIL PESANAN:*\n`;
+
+        let total = 0;
+        selectedItems.forEach(id => {
+          const item = menuItems.find(m => m.id == id);
+          const subtotal = item.price * cart[id];
+          total += subtotal;
+          
+          let itemDetail = `• *${item.name}* (x${cart[id]}) = Rp ${subtotal.toLocaleString('id-ID')}`;
+          if (item.hasOptions && options[id]) {
+            itemDetail += `\n  └ *Opsi Gula:* ${options[id]}`;
+          }
+          message += itemDetail + `\n`;
+        });
+
+        message += `\n-----------------------------------\n`;
+        message += `-> *TOTAL BAYAR:* *Rp ${total.toLocaleString('id-ID')}*\n\n`;
+        message += `Mohon segera diproses ya kak! Terima kasih.`;
+
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/${ADMIN_WA}?text=${encodedMessage}`, '_blank');
+
+      } catch (err) {
+        console.error(err);
+        alert("Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.");
+      } finally {
+        btnSubmit.disabled = false;
+        btnText.innerText = "Kirim Pesanan";
+      }
     }
 
     renderMenu();
