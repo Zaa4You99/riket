@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riket - Risol Roket | Menu Digital</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen pb-32">
+
+  <!-- Header & Brand Riket -->
+  <header class="bg-gradient-to-r from-orange-600 to-red-600 p-6 rounded-b-3xl shadow-lg text-center relative overflow-hidden">
+    <div class="relative z-10">
+      <div class="inline-block bg-white text-orange-600 p-3 rounded-full mb-2 shadow-md">
+        <i class="fa-solid fa-rocket text-3xl"></i>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-wider">RIKET</h1>
+      <p class="text-orange-100 text-sm font-medium">Risol Roket - By kelompok 6 !!!</p>
+    </div>
+  </header>
+
+  <!-- Input Nomor Meja -->
+  <div class="max-w-md mx-auto px-4 mt-4">
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-md flex items-center justify-between">
+      <label for="table-number" class="text-sm font-semibold text-gray-300">
+        <i class="fa-solid fa-chair text-orange-500 mr-2"></i>Nomor Meja:
+      </label>
+      <input type="text" id="table-number" placeholder="Contoh: 05" class="bg-gray-900 border border-orange-500 text-white font-bold text-center w-28 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400">
+    </div>
+  </div>
+
+  <!-- Menu Section -->
+  <main class="max-w-md mx-auto px-4 mt-6">
+    <h2 class="text-lg font-bold mb-4 border-l-4 border-orange-500 pl-3">Pilihan Risol Roket</h2>
+    
+    <div id="menu-container" class="space-y-4">
+      <!-- Item Menu di-render via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Bottom Bar Total & Pesan -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 p-4 shadow-2xl z-50">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div>
+        <p class="text-xs text-gray-400">Total Pesanan</p>
+        <p id="total-price" class="text-xl font-extrabold text-orange-400">Rp 0</p>
+      </div>
+      <button onclick="sendOrder()" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition">
+        <i class="fa-brands fa-whatsapp text-lg"></i>
+        <span>Kirim Pesanan</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Nomor WhatsApp usaha kamu
+    const ADMIN_WA = "62881027362553";
+
+    /*
+      PETUNJUK PENGISIAN FOTO PRODUK:
+      Kamu bisa ganti nilai "image" di bawah pakai:
+      1. Nama file lokal (jika foto disimpan di folder yang sama dengan file HTML)
+         Contoh: image: "mayo.jpg"
+      2. Link / URL gambar online (misal dari ImgBB, Google Drive, dll)
+         Contoh: image: "https://i.ibb.co/xxxxx/mayo.jpg"
+    */
+
+    const menuItems = [
+      {
+        id: 1,
+        name: "Riket Mayo Classic",
+        desc: "Smoked beef, telur, & mayo gurih melimpah.",
+        price: 5000,
+        image: "mayo.jpg" // Ganti dengan nama file foto / URL foto kamu
+      },
+      {
+        id: 2,
+        name: "Riket Pedas Meluncur",
+        desc: "Ayam suwir pedas mercon bikin nampol.",
+        price: 6000,
+        image: "pedas.jpg" // Ganti dengan nama file foto / URL foto kamu
+      },
+      {
+        id: 3,
+        name: "Riket Keju Lumer",
+        desc: "Isian keju mozzarella & saus keju gurih.",
+        price: 7000,
+        image: "keju.jpg" // Ganti dengan nama file foto / URL foto kamu
+      },
+      {
+        id: 4,
+        name: "Es Teh Solo Roket",
+        desc: "Segarnya teh melati khas pendamping Riket.",
+        price: 3000,
+        image: "esteh.jpg" // Ganti dengan nama file foto / URL foto kamu
+      }
+    ];
+
+    let cart = {};
+
+    function renderMenu() {
+      const container = document.getElementById('menu-container');
+      container.innerHTML = menuItems.map(item => `
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-3 flex gap-3 items-center shadow-md">
+          <img src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=Foto+Produk';" class="w-20 h-20 object-cover rounded-xl border border-gray-700">
+          <div class="flex-1">
+            <h3 class="font-bold text-white text-base">${item.name}</h3>
+            <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">${item.desc}</p>
+            <p class="text-orange-400 font-extrabold text-sm mt-1">Rp ${item.price.toLocaleString('id-ID')}</p>
+          </div>
+          <div class="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-xl p-1">
+            <button onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-gray-800 rounded-lg flex items-center justify-center text-orange-400 font-bold active:bg-gray-700">-</button>
+            <span id="qty-${item.id}" class="text-sm font-bold w-4 text-center">0</span>
+            <button onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold active:bg-orange-600">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateCart(id, change) {
+      if (!cart[id]) cart[id] = 0;
+      cart[id] += change;
+
+      if (cart[id] <= 0) delete cart[id];
+
+      document.getElementById(`qty-${id}`).innerText = cart[id] || 0;
+      calculateTotal();
+    }
+
+    function calculateTotal() {
+      let total = 0;
+      for (const id in cart) {
+        const item = menuItems.find(m => m.id == id);
+        total += item.price * cart[id];
+      }
+      document.getElementById('total-price').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+    }
+
+    function sendOrder() {
+      const tableNum = document.getElementById('table-number').value.trim();
+      
+      if (!tableNum) {
+        alert("Mohon isi Nomor Meja terlebih dahulu!");
+        return;
+      }
+
+      const selectedItems = Object.keys(cart);
+      if (selectedItems.length === 0) {
+        alert("Pilih minimal 1 menu Riket!");
+        return;
+      }
+
+      let message = `* [ PESANAN BARU ] *\n`;
+      message += `-----------------------------------\n`;
+      message += `-> *Nomor Meja:* Meja ${tableNum}\n`;
+      message += `-----------------------------------\n\n`;
+      message += `*DETAIL PESANAN:*\n`;
+
+      let total = 0;
+      selectedItems.forEach(id => {
+        const item = menuItems.find(m => m.id == id);
+        const subtotal = item.price * cart[id];
+        total += subtotal;
+        message += `• *${item.name}* (x${cart[id]}) = Rp ${subtotal.toLocaleString('id-ID')}\n`;
+      });
+
+      message += `\n-----------------------------------\n`;
+      message += `-> *TOTAL BAYAR:* *Rp ${total.toLocaleString('id-ID')}*\n\n`;
+      message += `Mohon segera diproses ya kak! Terima kasih.`;
+
+      const encodedMessage = encodeURIComponent(message);
+      window.open(`https://wa.me/${ADMIN_WA}?text=${encodedMessage}`, '_blank');
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
