@@ -24,13 +24,13 @@
     </div>
   </header>
 
-  <!-- Input Nomor Meja -->
+  <!-- Input Nama Pemesan -->
   <div class="max-w-md mx-auto px-4 mt-4">
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-md flex items-center justify-between">
-      <label for="table-number" class="text-sm font-semibold text-gray-300">
-        <i class="fa-solid fa-chair text-orange-500 mr-2"></i>Nomor Meja:
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow-md flex items-center justify-between gap-3">
+      <label for="customer-name" class="text-sm font-semibold text-gray-300 flex items-center shrink-0">
+        <i class="fa-solid fa-user text-orange-500 mr-2"></i>Nama Pemesan:
       </label>
-      <input type="text" id="table-number" placeholder="Contoh: 05" class="bg-gray-900 border border-orange-500 text-white font-bold text-center w-28 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400">
+      <input type="text" id="customer-name" placeholder="Masukkan nama..." class="bg-gray-900 border border-orange-500 text-white font-bold text-center w-full py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400">
     </div>
   </div>
 
@@ -61,74 +61,115 @@
     // Nomor WhatsApp usaha kamu
     const ADMIN_WA = "62881027362553";
 
-    /*
-      PETUNJUK PENGISIAN FOTO PRODUK:
-      Kamu bisa ganti nilai "image" di bawah pakai:
-      1. Nama file lokal (jika foto disimpan di folder yang sama dengan file HTML)
-         Contoh: image: "mayo.jpg"
-      2. Link / URL gambar online (misal dari ImgBB, Google Drive, dll)
-         Contoh: image: "https://i.ibb.co/xxxxx/mayo.jpg"
-    */
-
     const menuItems = [
       {
         id: 1,
         name: "Riket Mayo Classic",
         desc: "Smoked beef, telur, & mayo gurih melimpah.",
         price: 5000,
-        image: "mayo.jpg" // Ganti dengan nama file foto / URL foto kamu
+        image: "mayo.jpg"
       },
       {
         id: 2,
         name: "Riket Pedas Meluncur",
         desc: "Ayam suwir pedas mercon bikin nampol.",
         price: 6000,
-        image: "pedas.jpg" // Ganti dengan nama file foto / URL foto kamu
+        image: "pedas.jpg"
       },
       {
         id: 3,
         name: "Riket Keju Lumer",
         desc: "Isian keju mozzarella & saus keju gurih.",
         price: 7000,
-        image: "keju.jpg" // Ganti dengan nama file foto / URL foto kamu
+        image: "keju.jpg"
       },
       {
         id: 4,
         name: "Es Teh Solo Roket",
         desc: "Segarnya teh melati khas pendamping Riket.",
         price: 3000,
-        image: "esteh.jpg" // Ganti dengan nama file foto / URL foto kamu
+        image: "esteh.jpg",
+        hasOptions: true
       }
     ];
 
     let cart = {};
+    let options = {
+      4: "Normal Sugar" // Default opsi gula Es Teh
+    };
 
     function renderMenu() {
       const container = document.getElementById('menu-container');
       container.innerHTML = menuItems.map(item => `
-        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-3 flex gap-3 items-center shadow-md">
-          <img src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=Foto+Produk';" class="w-20 h-20 object-cover rounded-xl border border-gray-700">
-          <div class="flex-1">
-            <h3 class="font-bold text-white text-base">${item.name}</h3>
-            <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">${item.desc}</p>
-            <p class="text-orange-400 font-extrabold text-sm mt-1">Rp ${item.price.toLocaleString('id-ID')}</p>
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-3 shadow-md flex flex-col gap-2">
+          <div class="flex gap-3 items-center">
+            <img src="${item.image}" alt="${item.name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/150?text=Foto+Produk';" class="w-20 h-20 object-cover rounded-xl border border-gray-700">
+            <div class="flex-1">
+              <h3 class="font-bold text-white text-base">${item.name}</h3>
+              <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">${item.desc}</p>
+              <p class="text-orange-400 font-extrabold text-sm mt-1">Rp ${item.price.toLocaleString('id-ID')}</p>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-xl p-1">
+              <button onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-gray-800 rounded-lg flex items-center justify-center text-orange-400 font-bold active:bg-gray-700">-</button>
+              <span id="qty-${item.id}" class="text-sm font-bold w-4 text-center">${cart[item.id] || 0}</span>
+              <button onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold active:bg-orange-600">+</button>
+            </div>
           </div>
-          <div class="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-xl p-1">
-            <button onclick="updateCart(${item.id}, -1)" class="w-7 h-7 bg-gray-800 rounded-lg flex items-center justify-center text-orange-400 font-bold active:bg-gray-700">-</button>
-            <span id="qty-${item.id}" class="text-sm font-bold w-4 text-center">0</span>
-            <button onclick="updateCart(${item.id}, 1)" class="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold active:bg-orange-600">+</button>
-          </div>
+
+          <!-- Opsi Level Gula khusus Es Teh -->
+          ${item.hasOptions ? `
+            <div id="options-container-${item.id}" class="${cart[item.id] ? 'block' : 'hidden'} mt-1 pt-2 border-t border-gray-700/60">
+              <label class="text-xs font-semibold text-gray-300 block mb-1">Pilih Takaran Gula:</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="selectOption(${item.id}, 'Less Sugar')" id="opt-${item.id}-Less Sugar" class="option-btn text-xs py-1 px-2 rounded-lg border border-gray-600 bg-gray-900 text-gray-300 font-medium active:scale-95 transition">Less Sugar</button>
+                <button type="button" onclick="selectOption(${item.id}, 'Normal Sugar')" id="opt-${item.id}-Normal Sugar" class="option-btn text-xs py-1 px-2 rounded-lg border border-orange-500 bg-orange-500 text-white font-bold active:scale-95 transition">Normal</button>
+                <button type="button" onclick="selectOption(${item.id}, 'Extra Sugar')" id="opt-${item.id}-Extra Sugar" class="option-btn text-xs py-1 px-2 rounded-lg border border-gray-600 bg-gray-900 text-gray-300 font-medium active:scale-95 transition">Extra Sugar</button>
+              </div>
+            </div>
+          ` : ''}
         </div>
       `).join('');
+    }
+
+    function selectOption(itemId, val) {
+      options[itemId] = val;
+      
+      // Update UI tombol opsi
+      const optionsList = ['Less Sugar', 'Normal Sugar', 'Extra Sugar'];
+      optionsList.forEach(opt => {
+        const btn = document.getElementById(`opt-${itemId}-${opt}`);
+        if (btn) {
+          if (opt === val) {
+            btn.className = "option-btn text-xs py-1 px-2 rounded-lg border border-orange-500 bg-orange-500 text-white font-bold active:scale-95 transition";
+          } else {
+            btn.className = "option-btn text-xs py-1 px-2 rounded-lg border border-gray-600 bg-gray-900 text-gray-300 font-medium active:scale-95 transition";
+          }
+        }
+      });
     }
 
     function updateCart(id, change) {
       if (!cart[id]) cart[id] = 0;
       cart[id] += change;
 
-      if (cart[id] <= 0) delete cart[id];
+      if (cart[id] <= 0) {
+        delete cart[id];
+      }
 
       document.getElementById(`qty-${id}`).innerText = cart[id] || 0;
+
+      // Sembunyikan / tampilkan opsi gula tergantung jumlah pesanan
+      const optContainer = document.getElementById(`options-container-${id}`);
+      if (optContainer) {
+        if (cart[id] > 0) {
+          optContainer.classList.remove('hidden');
+          optContainer.classList.add('block');
+        } else {
+          optContainer.classList.remove('block');
+          optContainer.classList.add('hidden');
+        }
+      }
+
       calculateTotal();
     }
 
@@ -142,10 +183,10 @@
     }
 
     function sendOrder() {
-      const tableNum = document.getElementById('table-number').value.trim();
+      const customerName = document.getElementById('customer-name').value.trim();
       
-      if (!tableNum) {
-        alert("Mohon isi Nomor Meja terlebih dahulu!");
+      if (!customerName) {
+        alert("Mohon isi Nama Pemesan terlebih dahulu!");
         return;
       }
 
@@ -155,9 +196,9 @@
         return;
       }
 
-      let message = `* [ PESANAN BARU ] *\n`;
+      let message = `* [ PESANAN BARU - RIKET ] *\n`;
       message += `-----------------------------------\n`;
-      message += `-> *Nomor Meja:* Meja ${tableNum}\n`;
+      message += `-> *Nama Pemesan:* ${customerName}\n`;
       message += `-----------------------------------\n\n`;
       message += `*DETAIL PESANAN:*\n`;
 
@@ -166,7 +207,12 @@
         const item = menuItems.find(m => m.id == id);
         const subtotal = item.price * cart[id];
         total += subtotal;
-        message += `• *${item.name}* (x${cart[id]}) = Rp ${subtotal.toLocaleString('id-ID')}\n`;
+        
+        let itemDetail = `• *${item.name}* (x${cart[id]}) = Rp ${subtotal.toLocaleString('id-ID')}`;
+        if (item.hasOptions && options[id]) {
+          itemDetail += `\n  └ *Opsi Gula:* ${options[id]}`;
+        }
+        message += itemDetail + `\n`;
       });
 
       message += `\n-----------------------------------\n`;
