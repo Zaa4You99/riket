@@ -3,8 +3,8 @@
    ========================================================= */
 const CONFIG = {
   // Nomor WhatsApp kamu, format internasional TANPA tanda + atau 0 di depan
-  // Contoh: 0881-0273-6253  ->  6288102736253
-  waNumber: "6288102736253",
+  // Contoh: 0813-8897-9788  ->  6281388979788
+  waNumber: "6281388979788",
   storeName: "Penerbang Risol",
 };
 
