@@ -196,6 +196,29 @@
     </div>
   </aside>
 
+  <!-- MODAL DETAIL MENU -->
+  <div class="modal" id="product-modal" role="dialog" aria-modal="true" aria-labelledby="detail-name">
+    <div class="modal-box detail-box">
+      <button class="close-btn detail-close" id="close-product" aria-label="Tutup">✕</button>
+      <div class="detail-img" id="detail-img"></div>
+      <div class="detail-body">
+        <span class="product-tag" id="detail-cat"></span>
+        <h3 id="detail-name"></h3>
+        <p class="detail-desc" id="detail-desc"></p>
+        <div class="detail-price" id="detail-price"></div>
+
+        <div class="detail-actions">
+          <div class="qty qty-lg">
+            <button type="button" id="detail-dec" aria-label="Kurangi">-</button>
+            <span id="detail-qty">1</span>
+            <button type="button" id="detail-inc" aria-label="Tambah">+</button>
+          </div>
+          <button type="button" class="btn btn-primary" id="detail-add">Tambah ke Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL CHECKOUT -->
   <div class="modal" id="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
     <div class="modal-box">

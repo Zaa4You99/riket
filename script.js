@@ -4,17 +4,19 @@
 const CONFIG = {
   // Nomor WhatsApp kamu, format internasional TANPA tanda + atau 0 di depan
   // Contoh: 0881-0273-6253  ->  6288102736253
-  waNumber: "62881027362553",
-  storeName: "Penerbang Risol", // Nama toko / brand kamu
+  waNumber: "6288102736253",
+  storeName: "Penerbang Risol",
 };
 
 // Daftar produk. Tambah / ubah / hapus sesuai kebutuhan.
 // "image" = path foto produk. Taruh foto di folder "img" (sejajar index.html).
 // Kalau foto belum ada, otomatis tampil kotak "Foto belum tersedia".
 const PRODUCTS = [
-  { id: 1, name: "Risol Mayo",      category: "Risol",   price: 5000, image: "img/risol-mayo.jpg",       desc: "Risol renyah dengan isian mayo yang creamy." },
-  { id: 2, name: "Risol Ayam Pedas", category: "Risol",   price: 6000, image: "img/risol-ayam-pedas.jpg", desc: "Risol isi ayam suwir berbumbu pedas yang nendang." },
-  { id: 3, name: "Es Teh Manis",    category: "Minuman", price: 4000, image: "img/es-teh-manis.jpg",     desc: "Es teh manis segar, pas ditemani risol." },
+  { id: 1, name: "Boeing Beef",       category: "Risol",   price: 4000, image: "img/boeing-beef.jpg",       desc: "Risol beef mayo." },
+  { id: 2, name: "Jet Spicy Ayam",    category: "Risol",   price: 4000, image: "img/jet-spicy-ayam.jpg",    desc: "Risol ragout ayam." },
+  { id: 3, name: "Choco Turbulence",  category: "Risol",   price: 5000, image: "img/choco-turbulence.jpg",  desc: "Risol coklat." },
+  { id: 4, name: "Matcha Airlines",   category: "Risol",   price: 5000, image: "img/matcha-airlines.jpg",   desc: "Risol matcha." },
+  { id: 5, name: "Thai Tea Orbit",    category: "Minuman", price: 6000, image: "img/thai-tea-orbit.jpg",    desc: "Thai tea 250ml." },
 ];
 
 // Menghasilkan <img> produk, dengan cadangan kalau file foto tidak ditemukan
@@ -80,10 +82,10 @@ function renderProducts() {
       const visual = productImage(p);
       return `
         <article class="product-card">
-          <div class="product-img">${visual}</div>
+          <div class="product-img" data-detail="${p.id}" title="Lihat detail">${visual}</div>
           <div class="product-body">
             <span class="product-tag">${escapeHTML(p.category)}</span>
-            <h3>${escapeHTML(p.name)}</h3>
+            <h3 class="product-name" data-detail="${p.id}">${escapeHTML(p.name)}</h3>
             <p class="product-desc">${escapeHTML(p.desc)}</p>
             <div class="product-bottom">
               <span class="product-price">${rupiah(p.price)}</span>
@@ -105,22 +107,26 @@ filtersEl.addEventListener("click", (e) => {
 
 grid.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-add]");
-  if (!btn) return;
-  addToCart(Number(btn.dataset.add));
+  if (btn) {
+    addToCart(Number(btn.dataset.add));
+    return;
+  }
+  const detail = e.target.closest("[data-detail]");
+  if (detail) openProduct(Number(detail.dataset.detail));
 });
 
 /* =========================================================
    KERANJANG
    ========================================================= */
-function addToCart(id) {
+function addToCart(id, qty = 1) {
   const product = PRODUCTS.find((p) => p.id === id);
   if (!product) return;
   const item = cart.find((i) => i.id === id);
-  if (item) item.qty += 1;
-  else cart.push({ id, qty: 1 });
+  if (item) item.qty += qty;
+  else cart.push({ id, qty });
   saveCart();
   renderCart();
-  showToast(`${product.name} ditambahkan ✔`);
+  showToast(`${qty > 1 ? qty + "x " : ""}${product.name} ditambahkan ✔`);
 }
 
 function changeQty(id, delta) {
@@ -374,10 +380,65 @@ function showToast(message) {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    closeProduct();
     closeCart();
     closeCheckout();
     overlay.classList.remove("show");
   }
+});
+
+/* =========================================================
+   DETAIL MENU (tampil penuh 1 menu)
+   ========================================================= */
+const productModal = $("#product-modal");
+let detailId = null;
+let detailQty = 1;
+
+function renderDetailQty() {
+  const p = PRODUCTS.find((x) => x.id === detailId);
+  $("#detail-qty").textContent = detailQty;
+  $("#detail-add").textContent = p ? `Tambah ke Keranjang - ${rupiah(p.price * detailQty)}` : "Tambah ke Keranjang";
+}
+
+function openProduct(id) {
+  const p = PRODUCTS.find((x) => x.id === id);
+  if (!p) return;
+  detailId = id;
+  detailQty = 1;
+  const imgBox = $("#detail-img");
+  imgBox.className = "detail-img";
+  imgBox.innerHTML = productImage(p);
+  $("#detail-cat").textContent = p.category;
+  $("#detail-name").textContent = p.name;
+  $("#detail-desc").textContent = p.desc;
+  $("#detail-price").textContent = rupiah(p.price);
+  renderDetailQty();
+  productModal.classList.add("show");
+  document.body.classList.add("no-scroll");
+}
+
+function closeProduct() {
+  productModal.classList.remove("show");
+  if (!cartDrawer.classList.contains("open") && !checkoutModal.classList.contains("show")) {
+    document.body.classList.remove("no-scroll");
+  }
+}
+
+$("#close-product").addEventListener("click", closeProduct);
+productModal.addEventListener("click", (e) => {
+  if (e.target === productModal) closeProduct();
+});
+$("#detail-inc").addEventListener("click", () => {
+  detailQty += 1;
+  renderDetailQty();
+});
+$("#detail-dec").addEventListener("click", () => {
+  if (detailQty > 1) detailQty -= 1;
+  renderDetailQty();
+});
+$("#detail-add").addEventListener("click", () => {
+  addToCart(detailId, detailQty);
+  closeProduct();
 });
 
 /* =========================================================
